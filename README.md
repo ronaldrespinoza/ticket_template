@@ -1,6 +1,6 @@
-# Parking Garage Multi-Threading and Algorithm Optimization Ticket Template
+# Github Ticket Template
+This template is meant to serve as a structured way to track progress on the parking garage simulation project, helping developers stay organized and ensuring that no aspect of the problem is overlooked.
 
-This repository contains the project structure for implementing a multi-threaded producer-consumer problem using C++ to simulate parking management in a multi-level parking garage. The goal is to find the best available parking spot near an elevator using advanced algorithms such as Dijkstra's Algorithm for optimal efficiency.
 
 ### Key Concepts:
 The `ticket_template.md` serves as a guide to help break down the work required for developing this solution. The tasks outlined are as follows:
@@ -37,4 +37,5 @@ The `ticket_template.md` serves as a guide to help break down the work required 
 
 ---
 
-This template is meant to serve as a structured way to track progress on the parking garage simulation project, helping developers stay organized and ensuring that no aspect of the problem is overlooked.
+This repository contains the project structure for implementing a multi-threaded producer-consumer problem using C++ to simulate parking management in a multi-level parking garage. The goal is to find the best available parking spot near an elevator using advanced algorithms such as Dijkstra's Algorithm for optimal efficiency.
+

@@ -3,16 +3,6 @@
 This repository contains the project structure for implementing a multi-threaded producer-consumer problem using C++ to simulate parking management in a multi-level parking garage. The goal is to find the best available parking spot near an elevator using advanced algorithms such as Dijkstra's Algorithm for optimal efficiency.
 
 ### Key Concepts:
-1. **Producer-Consumer Problem:** The provided template uses a queue shared between two threads (producer and consumer). The producer generates parking events (e.g., cars arriving), and the consumer processes these events, finding optimal parking spots.
-  
-2. **Multi-Level Garage Simulation:** The parking garage is represented as a 2D grid, where each cell represents a parking spot. The task is to implement an efficient algorithm to find the closest available parking spot to the elevator, ensuring thread safety and concurrency handling.
-
-3. **Advanced Algorithm Application:** This template involves using Dijkstra's Algorithm for pathfinding, taking obstacles and spot availability into account. Additionally, other optimizations such as multi-threading and performance benchmarking are key parts of the solution.
-
----
-
-### Tasks and Guidelines
-
 The `ticket_template.md` serves as a guide to help break down the work required for developing this solution. The tasks outlined are as follows:
 
 - **Branch Management:** Create branches to organize work for different features and tasks, such as bug fixes or new functionalities.
@@ -25,7 +15,18 @@ The `ticket_template.md` serves as a guide to help break down the work required 
 
 - **Acceptance Criteria:** The ticket clearly defines what needs to be done for completion, including implementing algorithms, benchmarking performance, and testing edge cases.
 
+### Tasks and Guidelines
 ---
+
+1. **Producer-Consumer Problem:** The provided template uses a queue shared between two threads (producer and consumer). The producer generates parking events (e.g., cars arriving), and the consumer processes these events, finding optimal parking spots.
+  
+2. **Multi-Level Garage Simulation:** The parking garage is represented as a 2D grid, where each cell represents a parking spot. The task is to implement an efficient algorithm to find the closest available parking spot to the elevator, ensuring thread safety and concurrency handling.
+
+3. **Advanced Algorithm Application:** This template involves using Dijkstra's Algorithm for pathfinding, taking obstacles and spot availability into account. Additionally, other optimizations such as multi-threading and performance benchmarking are key parts of the solution.
+
+---
+
+
 
 ### Additional Information:
 - **Benchmarking:** Developers are asked to benchmark both single-threaded and multi-threaded implementations for performance using different grid sizes (e.g., 10, 100, 1000 parking spots).

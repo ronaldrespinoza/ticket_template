@@ -1,14 +1,24 @@
 # Use this as a template for filling out tickets associated with a label tag request
 
 ## Associated Branches
-Which branches were made for this project
-You can make your own branch of the format label_branchName
-Or you can use the Create a branch for this issue or link a pull request
+Which branches were made for this project<br>
+
+[bug/fix_some_issue_branch](theLinkToTheIssue/somepage.html)
+
+You can make your own branch of the format label_branchName<br>
+Or you can use the Create a branch for this issue<br>
+![create a branch](assets/create_a_branch.png)
+
+You can also link a pull request<br>
+![link a pull request](assets/link%20pull%20request.png)
 
 ## Description and Context
-Briefly explain what needs to be done and why
+In one or two sentences Briefly explain what needs to be done and why<br>
 
-Simulate a real-time particle system where each particle has properties that affect other particles within a certain range (gravity, magnetic fields, etc.) utilize multithreading and algorithm optimization in the solution.
+    A pull request in GitHub is a request to merge changes from one branch into another, allowing for code review and collaboration.
+    It involves creating a branch, making changes, committing and pushing them, then opening a PR for review and merging into the main branch.
+
+This process is essential for collaborative development because it allows others to understand the goal/objective your work
 
 ## Supporting Documentation
 Add links to any outside documents that are helpful for either understanding or fixing the issue
@@ -16,175 +26,161 @@ Add links to any outside documents that are helpful for either understanding or 
 * [CPP multithreading tutorial](https://www.tutorialspoint.com/cplusplus/cpp_multithreading.htm)
 * [CPP thread safe queue](https://www.geeksforgeeks.org/implement-thread-safe-queue-in-c/)
 * [CPP utlizing a queue to split tasks between threads](https://stackoverflow.com/questions/6393156/programming-logic-splitting-up-tasks-between-threads)
-* [CPP Quadtree](https://github.com/pvigier/Quadtree)
-* [CPP Quadtree example](https://www.geeksforgeeks.org/quad-tree/)
-* [CPP Barnes Hut with Quadtree example](https://lisyarus.github.io/blog/programming/2022/12/21/quadtrees.html)
-* [CPP timing function call](https://www.geeksforgeeks.org/measure-execution-time-function-cpp/)
-* [Producer Consumer Problem](https://en.wikipedia.org/wiki/Producer%E2%80%93consumer_problem)
-* [Optimized multithreading in C](https://medium.com/distributed-knowledge/optimizations-for-c-multi-threaded-programs-33284dee5e9c)
-* [CPP Barnes Hut Simulator](https://github.com/beltoforion/Barnes-Hut-Simulator)
-* [CPP Barnes Hut Force calculation](https://codereview.stackexchange.com/questions/95932/barnes-hut-n-body-simulator)
-* [Google Benchmark](https://github.com/google/benchmark)
-
 
 
  <h4>Original Source Code</h4>
 
 ```cpp
 #include <iostream>
-#include <vector>
-#include <cmath>
- 
-struct Particle {
-   double x, y, z;
-   double mass;
-   double vx, vy, vz;
-};
- 
-class ParticleSystem {
-public:
-   std::vector<Particle> particles;
- 
-   ParticleSystem(int num_particles) {
-       for(int i=0; i<num_particles; i++) {
-           Particle p = {rand() % 1000, rand() % 1000, rand() % 1000,
-                         1.0,
-                         0.0, 0.0, 0.0};
-           particles.push_back(p);
-       }
-   }
- 
-   void update() {
-       for(int i=0; i<particles.size(); i++) {
-           for(int j=i+1; j<particles.size(); j++) {
-               double dx = particles[j].x - particles[i].x;
-               double dy = particles[j].y - particles[i].y;
-               double dz = particles[j].z - particles[i].z;
- 
-               double dist = std::sqrt(dx*dx + dy*dy + dz*dz);
-               double force = particles[i].mass * particles[j].mass / (dist*dist*dist);
-               
-               particles[i].vx += force * dx;
-               particles[i].vy += force * dy;
-               particles[i].vz += force * dz;
- 
-               particles[j].vx -= force * dx;
-               particles[j].vy -= force * dy;
-               particles[j].vz -= force * dz;
-           }
-       }
- 
-       for(auto& p : particles) {
-           p.x += p.vx;
-           p.y += p.vy;
-           p.z += p.vz;
-       }
-   }
-};
- 
-int main() {
-   const int NUM_PARTICLES = 100;
-   const int NUM_UPDATES = 100;
- 
-   ParticleSystem system(NUM_PARTICLES);
- 
-   for(int i=0; i<NUM_UPDATES; i++) {
-       system.update();
-   }
-​
-   return 0;
+#include <thread>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+
+std::queue<int> q;
+std::mutex mtx;
+std::condition_variable cv;
+bool done = false;
+
+// Producer thread function
+void producer() {
+    for (int i = 0; i < 10; ++i) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Simulate work
+        std::lock_guard<std::mutex> lock(mtx);
+        q.push(i);
+        std::cout << "Produced: " << i << std::endl;
+        cv.notify_one(); // Notify consumer thread
+    }
+    done = true;
+    cv.notify_one(); // Notify consumer that production is done
 }
+
+// Consumer thread function
+void consumer() {
+    while (true) {
+        std::unique_lock<std::mutex> lock(mtx);
+        cv.wait(lock, []{ return !q.empty() || done; }); // Wait until queue is not empty or done
+        if (!q.empty()) {
+            int value = q.front();
+            q.pop();
+            std::cout << "Consumed: " << value << std::endl;
+        }
+        if (done && q.empty()) {
+            break; // Exit if production is done and queue is empty
+        }
+    }
+}
+
+int main() {
+    // Create producer and consumer threads
+    std::thread producer_thread(producer);
+    std::thread consumer_thread(consumer);
+
+    // Wait for threads to finish
+    producer_thread.join();
+    consumer_thread.join();
+
+    return 0;
+}
+
 ```
 
 <h3>Question:</h3>
+
 You are working on a C++ simulation engine that requires optimization for multi-threading.<br>
 The simulation involves a calculation-heavy task:<br>
 
- - Simulating a real-time particle system where each particle has properties that affect other particles within a certain range (gravity, magnetic fields, etc.).<br>
- - The system currently runs as a single-threaded process. Your task is to design and implement a multi-threaded version of this task and measure its performance compared to the original single-threaded version.<br>
+ - Design and implement a multithreaded producer-consumer problem using a queue.<br>
+ - You are tasked with designing a system to manage car parking in a multi-level parking garage.<br>
+ - The garage has a grid layout, where each parking spot can either be occupied or available.<br>
+ - The goal is to find the best available parking spot for a car to park, where the "best" spot is defined as the closest one to the elevator.<br>
 
 <h3>Requirements:</h3>
 
-* The provided code illustrates a basic single threaded particle system. 
+* The provided code illustrates a queue that is shared between two threads: 
+    *   A producer thread and a consumer thread.
+    *   The producer produces items and pushes them into the queue, while the consumer consumes (or removes) items from the queue.
+    *   You must implement this system ensuring that the producer and consumer threads work together safely, and handle situations like the queue being empty or full.
+    *   Implement this in C++.
 
-* Each particle has properties like 
-  - <input type="checkbox"> position
-  - <input type="checkbox"> velocity
-  - <input type="checkbox"> mass
+ *   The parking garage has multiple levels, each with a grid of spots.
+ *   The elevator is located at a specific spot on the garage grid.
+ *   When a new car enters, it needs to be assigned the best available parking spot. The best spot is the one closest to the elevator.
+ *   If there are multiple spots that are equidistant from the elevator, the system should select the first available spot (based on row or column order).
+ *   You need to handle scenarios where the parking garage may be full or there are no available spots.
 
-* Particles will affect each other based on their distance and properties.<br>
-
-* Implement a multi-threaded version of the particle system.<br>
-
-* The particles should be distributed among different threads for calculation.<br>
+ *  Question:
+    *   How would you represent the parking garage grid and the spots?
+    *   How would you find the closest available spot to the elevator using an efficient algorithm?
+    *   How would you update the parking garage after a car parks?
+    *   Can you write a function to solve this problem?
 
 * Ensure proper synchronization and thread safety in the multi-threaded implementation. You should particularly consider how to handle synchronizing the particle updates.<br>
 
-- <input type="checkbox"> Benchmark both the single-threaded and multi-threaded versions for different numbers of particles
+- <input type="checkbox"> Benchmark both the single-threaded and multi-threaded versions for different numbers of full spots
+  - <input type="checkbox">  10
   - <input type="checkbox">  100
   - <input type="checkbox">  1000
-  - <input type="checkbox">  10,000
-  - <input type="checkbox"> Record the time taken for a fixed number of updates in both cases.<br>
+  - <input type="checkbox"> Record the time taken for finding the best spot in each case.<br>
 
 * Describe any challenges or considerations when introducing multi-threading into the engine and propose solutions to address them.<br>
 
 * Create a brief document or presentation that provides an overview of your solution, including key design decisions, benchmark results, and performance analysis.<br>
 
+ *  Follow-up Questions:
+    *   How would your approach change if the parking garage is much larger (e.g., millions of spots)?
+    *   What if there were multiple elevators or entrances to the garage?
+    *   How would you handle edge cases such as a full garage, multiple cars arriving at the same time, or the elevator being blocked?
+
 <h3>Additional Information:</h3>
  
-* Provide comments or explanations in your code to demonstrate your thought process and understanding of the concepts. Include all the code used in your final deliverable.
+ *  To solve this problem, you need a few key components:
 
-* Create a brief document or presentation to accompany your solution, explaining the implementation details and showcasing the key aspects of your solution.<br>
+    * Representation of the Garage:
 
-* Please provide your solution, including the particle system code, benchmarking results, documentation or presentation, and any additional explanations or insights you deem relevant.<br>
+        *   You could represent the parking garage as a 2D grid (a matrix), where each cell represents a parking spot.
+        *   The value in each cell can be 0 (available) or 1 (occupied).
+        *   The elevator location can be represented as a specific cell in the grid, say (elevator_row, elevator_col).
 
-* Here is a simple, single-threaded simulation of a particle system in C++. It's important to note that this code is just a starting point for the problem given, and it would need significant modification and expansion to meet the full requirements of the interview task.<br>
+    * Finding the Closest Available Spot:
 
-* This code represents a naive O(n^2) algorithm and will run very slowly for a large number of particles.<br>
+        *   The best spot is the one closest to the elevator.
+        *   To find this, you can use the Breadth-First Search (BFS) algorithm, which works well for finding the shortest path in an unweighted grid.
+        *   BFS explores all neighboring cells level by level, ensuring that when we first reach an available spot, it is the shortest possible distance from the elevator.
 
-* Additionally, this code does not yet incorporate multi-threading, which is a key component of the interview task.<br>
+    * Updating the Garage After Parking:
 
-* You would need to design a strategy for dividing the particles among threads and synchronizing their updates to achieve this.<br>
+        *   Once a car parks in a spot, you mark that spot as 1 (occupied) in the grid.
 
 <h3>Bonus Question: Advanced Algorithm Integration</h3>
 
-* In addition to implementing the multi-threaded version of the particle simulation, you are now tasked with integrating the Barnes-Hut algorithm to approximate gravitational forces in a large-scale particle system.<br>
+ *  The garage grid may be sparse, with many obstacles.
+ *  You need to ensure your solution efficiently handles large garages.
+ *  Use Dijkstra’s Algorithm to solve this problem.<br>
 
-* The Barnes-Hut algorithm utilizes a quadtree data structure to efficiently calculate forces between distant particles.<br>
-
-    - <input type="checkbox"> implment the Barnes-Hut Algorithm
-    - <input type="checkbox"> Use the Barnes-Hut Algorithm to calculate forces between particles
+    - <input type="checkbox"> How would you represent the parking garage, obstacles, and the elevator's position?
+    - <input type="checkbox"> How would you use Dijkstra’s algorithm to find the shortest path to the nearest available parking spot?
+    - <input type="checkbox"> What data structures would you use for the algorithm?
+    - <input type="checkbox"> Can you write the code to implement this solution?
 
 
 <h3>Please extend your existing solution to include the following:</h3>
 
-* Implement a quadtree data structure to represent the spatial distribution of particles.
+* Implement a quadtree data structure to represent the spatial distribution of parking spaces.
 
-* Each quadtree node should contain a subset of particles, and internal nodes should represent larger regions of space.<br>
+* Each quadtree node should contain a subset of parking spaces, and internal nodes should represent larger regions of space.<br>
 
-* Modify the force calculation in the multi-threaded particle simulation to utilize the Barnes-Hut algorithm. Instead of directly calculating forces between all particle pairs, traverse the quadtree to approximate forces between particles that are far apart.<br>
+* Benchmark and compare the performance of the enhanced simulation (with the Dijkstra’s algorithm) against the previous Breadth-First Search (BFS) algorithm.
 
-* Benchmark and compare the performance of the enhanced simulation (with the Barnes-Hut algorithm) against the previous multi-threaded implementation.
+* Measure the execution time for benchmark test cases listed and report the performance improvements achieved.<br>
 
-* Measure the execution time for a fixed number of updates for various particle system sizes and report the performance improvements achieved.<br>
-
-<h3>Additional Information:</h3>
+<h3>Additional Developer Information:</h3>
 
 * Provide comments or explanations in your code to demonstrate your thought process and understanding of the concepts.<br>
 
 * Include all the code used in your final deliverable.<br>
 
-* Update the brief document or presentation to describe the integration of the Barnes-Hut algorithm, any modifications to the code, and the performance analysis.<br>
-
-<h3>Example:</h3>
-
-Suppose you have a large-scale particle system with 10,000 particles. The previous multi-threaded implementation without the Barnes-Hut algorithm has an average execution time of 10 seconds for 100 updates.<br>
-
-After implementing the Barnes-Hut algorithm, the enhanced simulation achieves an average execution time of 2 seconds for the same number of updates on the same particle system.<br>
-
-Provide a detailed analysis of the performance improvement and discuss any trade-offs or limitations of the Barnes-Hut algorithm in this context.<br>
-
-Please extend your existing solution to incorporate the Barnes-Hut algorithm and provide the modified code, documentation, and any additional explanations or insights you deem relevant.<br>
+* Update the brief document or presentation to describe the integration of Dijkstra’s algorithm, any modifications to the code, and the performance analysis.<br>
 
 <h3>Barnes-Hut Algorithm enhanced sim explanation:</h3>
 
@@ -196,68 +192,115 @@ Some of the most demanding high-performance computing projects do computational 
 
 ## Scope / Requirements
 
+Indicate the exact scope and what is not in the requirements and what may cause this project to be out of bounds
+
+    The objective of this task is to implement an algorithm using Dijkstra's approach to find the shortest path from an elevator to the closest available parking spot in a multi-level parking garage, considering obstacles and ensuring optimal efficiency.
+
 ### Acceptance Criteria
 Clearly indicate what must be done to consider this issue finished
  * list of tests to satisfy
- * <input type="checkbox">  Benchmark(record the time taken) single-threaded updates for the following number of particles
-    * <input type="checkbox"> 100
+ * <input type="checkbox">  Benchmark(record the time taken) single-threaded updates for the following number of parking spaces
+    * <input type="checkbox"> 10
+    * <input type="checkbox">  100
     * <input type="checkbox">  1000
-    * <input type="checkbox">  10,000
- * <input type="checkbox">  Benchmark(record the time taken) multi-threaded updates for the following number of particles
-    * <input type="checkbox"> 100
+ * <input type="checkbox">  Benchmark(record the time taken) multi-threaded updates for the following number of parking spaces
+    * <input type="checkbox"> 10
+    * <input type="checkbox">  100
     * <input type="checkbox">  1000
-    * <input type="checkbox">  10,000
- * <input type="checkbox"> Implement a quadtree data structure to represent the spatial distribution of particles.
- * <input type="checkbox"> implment the Barnes-Hut Algorithm utilizing the quadtree structure
-    * <input type="checkbox"> Use the Barnes-Hut Algorithm to calculate forces between particles
-    * <input type="checkbox">  Benchmark(record the time taken) Barnes-Hut updates for the following number of particles
-        * <input type="checkbox"> 100
+ * <input type="checkbox"> implment the Breadth-First Search (BFS) algorithm utilizing the multithreaded queue
+    * <input type="checkbox">  Benchmark(record the time taken) multi-threaded updates for the following number of parking spaces
+        * <input type="checkbox"> 10
+        * <input type="checkbox">  100
         * <input type="checkbox">  1000
-        * <input type="checkbox">  10,000
+ * <input type="checkbox"> implment Dijkstra’s algorithm utilizing the multithreaded queue
+    * <input type="checkbox">  Benchmark(record the time taken) multi-threaded updates for the following number of parking spaces
+        * <input type="checkbox"> 10
+        * <input type="checkbox">  100
+        * <input type="checkbox">  1000
 
- 
+
 **Accepting Authority**: (@tag authority here)<br>
-This is the person who is authorized to call this issue "done".<br>
-@interviewers_for_HII
+This is the person who is authorized to call this issue "done" or approves the merge requests however your team works.<br>
+@the_person_in_charge
 
 ### Scope Clarifications
 Clarify what is meant by the above acceptance criteria when not immediately<br>
      clear. Especially clarify what ISN'T covered by this unit of work, to<br>
      prevent scope creep.<br>
 
+Things that would **not** be included in the scope of this task are:
+
+1. **Handling Parking Payment Systems**: The task does not involve integrating or managing any payment or billing systems for parking.
+2. **Dynamic Parking Availability Updates**: Real-time updates of parking spot availability based on incoming vehicles or changes in occupancy are not part of this task.
+3. **Multiple Elevators or Entrances**: The task assumes only one elevator; handling multiple elevators or entrances with routing logic would be outside the scope.
+4. **Advanced Vehicle Types (e.g., electric charging stations)**: The task does not consider the need for specialized spots for electric vehicles or other vehicle types with unique parking requirements.
+5. **Vehicle Navigation and Movement**: The task does not include simulating or guiding the car to the parking spot once it's been selected.
+6. **Parking Garage Structure Variability**: The task does not require the handling of highly dynamic or complex parking garage designs, like those with non-rectangular grid layouts or elevators with multiple floors.
+7. **User Interface or Visualization**: Creating a front-end interface or a visualization for the garage layout is outside the scope of the task. 
+8. **Security and Access Control**: Ensuring only authorized vehicles can access certain parking spots or integrating security features is not included.
+9. **Real-Time Traffic Analysis**: The task does not involve optimizing parking based on traffic flow or occupancy predictions over time.
+10. **Parking Spot Reservation**: Allowing users to reserve parking spots ahead of time is not part of this problem.
+
 ## Task Breakdown
- * <input type="checkbox" checked> create a test for 100 particles in single thread for 100 updates
- * <input type="checkbox" checked> create a test for 1000 particles in single thread for 100 updates
- * <input type="checkbox" checked> create a test for 10,000 particles in single thread for 100 updates
-* The tests for single_thread_update produced the following results:
-```cmd
-> Duration for singleThread 100 particles 20265 microseconds with num_updates: 100
-> Duration for singleThread 1000 particles 2028241 microseconds with num_updates: 100
-> Duration for singleThread 10000 particles 197481065 microseconds with num_updates: 100
-```
 
-* <input type="checkbox" checked> Implement a multi threaded update function
-    * <input type="checkbox" checked> utlize four threads to do work
- * <input type="checkbox" checked> create a test for 100 particles in multi threads for 100 updates
- * <input type="checkbox" checked> create a test for 1000 particles in multi threads for 100 updates
- * <input type="checkbox" checked> create a test for 10,000 particles in multi threads for 100 updates
-* The tests for single_thread_update and multi_threaded_update produced the following results:
-```cmd
-Duration for singleThread 100 particles 20930 microseconds with num_updates: 100
-Duration for singleThread 1000 particles 2076944 microseconds with num_updates: 100
-Duration for singleThread 10000 particles 197004519 microseconds with num_updates: 100
+Developers this is where you list the steps you took and what issues were encountered 
 
-Duration for multithreaded 100 particles 367033 microseconds with num_updates: 100
-Duration for multithreaded 1000 particles 364190 microseconds with num_updates: 100
-Duration for multithreaded 10000 particles 535979 microseconds with num_updates: 100
-```
-* <input type="checkbox"> Install and connect google benchmark to VS Code
-* <input type="checkbox"> Utlize VisualStudio and create a project utilizing Google Tests
+### Developer Task Breakdown
 
-* <input type="checkbox"> To implement the Barnes-Hut Algorithm utilize the following article [Implementation of Quadtree utilizing Barnes Hut algorithm](https://github.com/beltoforion/Barnes-Hut-Simulator)
-    * <input type="checkbox"> utilize the CalculateForce function from the following article to calculate forces between particles [CPP Barnes Hut Force calculation](https://codereview.stackexchange.com/questions/95932/barnes-hut-n-body-simulator)
-    * <input type="checkbox">  Benchmark(record the time taken) Barnes-Hut updates for the following number of particles
-        * <input type="checkbox"> 100
-        * <input type="checkbox">  1000
-        * <input type="checkbox">  10,000
-        
+- <input type="checkbox" checked> **Set Up the Basic Project Structure**
+  - <input type="checkbox" > Initialize a C++ project or a new file if working in a single-file structure.
+  - <input type="checkbox" > Define the header includes and basic I/O setup.
+
+---
+
+- <input type="checkbox" checked> **Define the Garage Grid Structure**
+  - <input type="checkbox" > Create a 2D vector to represent the garage grid, with values representing available spots, obstacles, and the elevator.
+  - <input type="checkbox" > Define constants or enums to represent different cell types: available (0), obstacle (1), elevator (2), occupied (3).
+
+---
+
+- <input type="checkbox" > **Implement the Dijkstra’s Algorithm Core Logic**
+  - <input type="checkbox" > Create a `Position` struct to store row, column, and distance information.
+  - <input type="checkbox" > Set up the priority queue (min-heap) to handle the selection of the closest spot.
+  - <input type="checkbox" > Implement the logic to process the grid cells and explore neighboring cells (up, down, left, right).
+  - <input type="checkbox" > Ensure that obstacles are avoided and that each cell's distance is properly updated.
+  - <input type="checkbox" > Return the shortest path to the closest available spot.
+
+---
+
+- <input type="checkbox" > **Handle Parking Spot Updates**
+  - <input type="checkbox" > Define a function to park a car at a specified position in the grid (mark it as occupied).
+  - <input type="checkbox" > Update the grid accordingly, changing the spot from `0` (available) to `3` (occupied).
+
+---
+
+- <input type="checkbox" > **Input Handling and Testing Setup**
+  - <input type="checkbox" > Implement test cases for the grid with various scenarios: no obstacles, multiple obstacles, no available spots, etc.
+  - <input type="checkbox" > Provide a hardcoded input or simulate input for the garage grid and elevator location.
+  - <input type="checkbox" > Print the result (distance to the closest spot) for validation.
+
+---
+
+- <input type="checkbox" > **Optimizations and Edge Case Handling**
+  - <input type="checkbox" > Ensure edge cases like full garages, grids without available spots, and multiple available spots with the same distance are handled.
+  - <input type="checkbox" > Consider the performance of the algorithm on larger grids and optimize if needed.
+
+---
+
+- <input type="checkbox" > **Documentation and Comments**
+  - <input type="checkbox" > Add comments to explain key sections of the code (especially the Dijkstra algorithm part).
+  - <input type="checkbox" > Write a brief README or code comments to explain how to run the program and what the inputs and outputs are.
+
+---
+
+- <input type="checkbox" > **Final Review and Testing**
+  - <input type="checkbox" > Ensure that all functionality works as expected.
+  - <input type="checkbox" > Run tests with different grid sizes and configurations to validate the correctness of the algorithm.
+  - <input type="checkbox" > Check for performance issues or possible optimizations in edge cases (e.g., large grids, many obstacles).
+
+---
+
+- <input type="checkbox" checked> **Optional Enhancements (Future Work)**
+  - <input type="checkbox" checked> Implement dynamic parking updates (real-time updates of spot availability).
+  - <input type="checkbox" checked> Add a graphical or user interface for visualizing the parking garage layout.
+  - <input type="checkbox" checked> Integrate multiple elevators or entrance options if required.
